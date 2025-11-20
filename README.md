@@ -192,4 +192,4 @@ Kalo tool ini berguna, consider buat:
 
 ---
 
-**Dibuat dengan ☕ dan sedikit frustasi terhadap proses registrasi manual yang ribet**
+**Dibuat dengan ☕**
