@@ -65,6 +65,7 @@ email3@example.com
 1. **[Boomlify](https://boomlify.com/)**
 2. **[Temp Mail IO](https://temp-mail.io/)**
 3. **[NoSpam Today](https://nospam.today/)**
+4. **[Email Generator](https://generator.email/)**
 
 > **Tips:** Jangan pake gmail asli lu kalo ga mau kena ban. Pake temp mail aja biar aman.
 
