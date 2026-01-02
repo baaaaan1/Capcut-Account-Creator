@@ -8,7 +8,7 @@ import argparse
 import sys
 from playwright.sync_api import sync_playwright
 
-LINKWEB = os.getenv("https://www.capcut.com/signup")
+LINKWEB = "https://www.capcut.com/signup"
 
 # --- HELPER FUNCTIONS (Sama seperti sebelumnya) ---
 def get_first_and_remove(filename):
