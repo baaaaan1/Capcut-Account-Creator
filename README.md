@@ -28,14 +28,13 @@ This tool is built for educational and automation-testing purposes only. Use it 
 - ✅ Secure random password generator
 - ✅ Auto-save credentials to JSON
 - ✅ Stealth mode (bypass anti-bot detection)
-- ✅ Temp mail support
-- ✅ **Auto email via [mail.tm](https://mail.tm)** — no need to prepare a manual email list
-- ✅ **Auto OTP** — the verification code is fetched automatically from the mail.tm inbox
+- ✅ **Detailed step logging** — logs every click and wait during account creation
 - ✅ **Auto verification** — verifies the account via the CapCut API and stores the `uid`
+- ✅ **Error / invalid proof** — failed attempts are also saved to `proof.json`
 
 ### ⚠️ Note about Web Selectors (IMPORTANT)
 
-The web selectors used to target elements on the CapCut page may **differ between countries/regions and may change over time** (CapCut frequently updates their UI). If the tool fails to fill the form, register an account, or read the OTP, the selectors in `main.py` (or `mailtm.py`) probably need to be adjusted. Check the release notes / issues for selector updates.
+The web selectors used to target elements on the CapCut page may **differ between countries/regions and may change over time** (CapCut frequently updates their UI). If the tool fails to fill the form, register an account, or read the OTP, the selectors in `main.py` probably need to be adjusted. Check the release notes / issues for selector updates.
 
 ### 📋 Requirements
 
@@ -71,9 +70,7 @@ pip install -r requirements.txt
 playwright install chromium
 ```
 
-### 📧 Preparing the Email List (Manual Mode)
-
-> **Skip this section if you use `--auto`** — emails are created automatically via mail.tm.
+### 📧 Preparing the Email List
 
 Create a `gmail-list.txt` file in the project root, filled with a list of emails (one email per line):
 
@@ -90,44 +87,67 @@ email3@example.com
 3. **[NoSpam Today](https://nospam.today/)**
 4. **[Email Generator](https://generator.email/)**
 
-> **Tip:** Don't use your real Gmail if you don't want to get banned. Use temp mail instead to stay safe.
+> **💡 Note — use a strong email for a higher success rate:**
+> For the **best success rate and more security**, prefer a **strong, real email** (e.g. **Gmail** / **Outlook**). Temp-mail domains are frequently blacklisted by CapCut, so real emails get far better OTP deliverability, a much higher account activation/verification rate, and are safer to recover if your password is lost.
+>
+> If you still prefer temp mail, use the services above — but expect a **lower success rate**.
 
-### ⚙️ How the Auto Mode Works (mail.tm)
+#### 🪄 Gmail Trick Generator (recommended)
 
-The `--auto` mode uses the [mail.tm API](https://docs.mail.tm/getting-started/authentication) (free, no API key needed):
+Sick of filling `gmail-list.txt` with many real emails? Use the built-in **Gmail trick generator** (`gmail_gen.py`). It turns **one** real Gmail/Outlook address into many unique-looking addresses, then **auto-writes them to `gmail-list.txt`**:
 
-1. `GET /domains` — fetch an active available domain
-2. `POST /accounts` — create a random email account (e.g. `ccx7a2k9@emalupe.com`)
-3. `POST /token` — obtain a Bearer token for authentication
-4. The script registers to CapCut using that email
-5. `GET /messages` — poll the inbox every 5 seconds (max 120 seconds) until the OTP email arrives
-6. The 6-digit OTP code is extracted automatically from the email and filled into the form
+```bash
+python gmail_gen.py -b my.name@gmail.com -n 20
+```
 
-If the OTP does not arrive within 120 seconds, the script falls back to manual CLI input.
+- `-b, --base` — your one real email (all generated variants deliver to this inbox)
+- `-n, --count` — number of unique emails to generate
+- `-m, --mode` — `dot` (Gmail), `plus` (Gmail/Outlook), or `both` (default)
+- `--append` — add to the existing list instead of overwriting
+- `--lang en|id` — output language
+
+**How the trick works:**
+- **Dot trick** (Gmail): Gmail ignores dots, so `my.name@gmail.com` can also be `my.na.me@gmail.com`, `m.y.n.a.me@gmail.com`, etc. — all deliver to the same inbox.
+- **Plus trick** (Gmail/Outlook): `base+1@gmail.com`, `base+2@gmail.com` … all deliver to the same inbox.
+
+So with **one real Gmail** you can fill `gmail-list.txt` and register many CapCut accounts — every OTP lands in the same inbox. Run it **with no arguments** to be prompted interactively.
 
 ### 🎮 Usage
 
-#### Auto Mode (mail.tm) — Recommended
+The output language defaults to **English**. Use the `--lang id` flag (or the interactive menu) to switch to Bahasa Indonesia.
 
-No need to prepare a `gmail-list.txt`. Emails are created automatically via the [mail.tm API](https://docs.mail.tm/getting-started/authentication) and the OTP is fetched automatically from the inbox:
+#### Interactive Config Menu
 
-```bash
-python main.py --auto
+Run `python main.py` with **no arguments** to open an interactive menu and configure the run:
+
+```text
+==================================================
+🤖 CAPCUT BOT - CONFIG MENU
+==================================================
+[1] Language / Bahasa: English
+[2] Number of accounts / Jumlah akun: 1
+[3] Headless mode: OFF
+[4] Start / Mulai
+[0] Exit / Keluar
+==================================================
+Choose / Pilih: 
 ```
 
-#### Auto Mode + Multiple Accounts + Headless (Fully Automatic)
+- `1` — toggle the output language (English / Bahasa Indonesia)
+- `2` — set the number of accounts to create
+- `3` — toggle headless mode
+- `4` — start running
+- `0` — exit
+
+> 💡 Passing **any** argument (e.g. `python main.py -n 5`) skips the menu and runs directly, so the tool stays scriptable. Invalid menu input re-prompts instead of crashing.
+
+#### Create 1 Account
 
 ```bash
-python main.py -n 5 --auto --headless
+python main.py -n 1
 ```
 
-#### Create 1 Account (Default, Manual)
-
-```bash
-python main.py
-```
-
-#### Create Multiple Accounts (Manual)
+#### Create Multiple Accounts
 
 ```bash
 python main.py -n 5
@@ -139,6 +159,12 @@ python main.py -n 5
 python main.py -n 3 --headless
 ```
 
+#### Choose the Output Language
+
+```bash
+python main.py -n 5 --lang id
+```
+
 #### Advanced Options
 
 ```bash
@@ -147,22 +173,20 @@ python main.py --help
 
 Output:
 ```
-usage: main.py [-h] [-n NUMBER] [--headless] [--auto]
+usage: main.py [-h] [-n NUMBER] [--headless] [--lang {en,id}]
 
 CapCut Auto Register CLI Tool
 
 options:
   -h, --help            show this help message and exit
-  -n NUMBER, --number NUMBER
-                        Number of accounts to create (Default: 1)
+  -n, --number NUMBER   Number of accounts to create (Default: 1)
   --headless            Run the browser in the background (not visible)
-  --auto                Auto email via mail.tm (no gmail-list.txt needed) +
-                        automatic OTP
+  --lang {en,id}        Output language: en or id
 ```
 
 ### 📸 CLI Screenshot
 
-Result of a batch of 3 accounts (auto email via mail.tm + auto OTP + verification):
+Result of a batch of 3 accounts:
 ![CapCut bot success](image.png)
 
 ### 📁 File Structure
@@ -171,11 +195,12 @@ Result of a batch of 3 accounts (auto email via mail.tm + auto OTP + verificatio
 Capcut-Acc-Maker/
 │
 ├── main.py              # Main script
-├── mailtm.py            # Mail.tm API client (auto email + auto OTP)
-├── gmail-list.txt       # Email list (created manually, not used in --auto mode)
-├── proof.json          # Output credentials (auto-generated)
-├── .venv/              # Virtual environment
-└── README.md           # This file
+├── gmail_gen.py         # Gmail trick generator (auto-fill gmail-list.txt)
+├── i18n.py              # Bilingual string table (EN / ID)
+├── gmail-list.txt       # Email list (created manually)
+├── proof.json           # Output credentials (auto-generated)
+├── .venv/               # Virtual environment
+└── README.md            # This file
 ```
 
 ### 📊 Output Format
@@ -185,17 +210,22 @@ Account data is saved to `proof.json`:
 ```json
 [
     {
-        "email": "ccx7a2k9@emalupe.com",
-        "password": "RMePPubILrp!",
-        "birthday": "25/05/2003",
-        "uid": "7677513420518622228",
+        "email": "your.email@example.com",
+        "password": "YourStrongPassword123!",
+        "birthday": "01/01/2000",
+        "uid": "YOUR_UID_HERE",
         "verified": true,
-        "created_at": "2026-08-24T15:33:52.033104"
+        "status": "success",
+        "created_at": "2026-08-25T00:00:00.000000"
     }
 ]
 ```
 
 > The `uid` and `verified` fields were added after enabling the account verification feature via the `commerce/v1/subscription/user_info` API.
+
+> Failed/invalid attempts are also saved to `proof.json` with `"status": "error"`, `"verified": false` and an `"error"` message, so you can review which emails failed.
+
+> **🔒 Privacy note:** `proof.json` and `gmail-list.txt` contain real credentials and are **git-ignored** — they are never committed. Replace the values above with your own data; they are only placeholders.
 
 ### 🐛 Troubleshooting
 
@@ -220,20 +250,16 @@ playwright install chromium
 
 #### OTP doesn't arrive
 
-- In `--auto` mode: the script polls the mail.tm inbox for 120 seconds, then falls back to manual input
 - Check the spam folder in the temp mail service
 - Wait 30-60 seconds
 - If it still doesn't arrive, try another email
 
-#### Error: Failed to create mail.tm email
-
-- Check your internet connection
-- mail.tm has a rate limit — the script retries automatically 3 times, but if it still fails wait 1-2 minutes
-- mail.tm domains are sometimes blacklisted by CapCut, try again later (active domains can change)
-
 ### 💡 Tips & Tricks
 
-1. **Use a VPN** when creating many accounts at once to avoid rate limits
+> **⚠️ Note — use a proxy/VPN to stay safe:**
+> Creating many accounts from a single IP is very easy for CapCut to detect and ban. Use a **proxy or VPN** (ideally a different IP per account, or rotate IPs) so each registration looks like it comes from a different user. This dramatically lowers the risk of your main IP and accounts being flagged/blacklisted. Combine it with the email-trick generator above for the best result.
+
+1. **Use a proxy/VPN** when creating many accounts at once to avoid rate limits and IP bans
 2. **Don't spam** — wait at least 1-2 minutes between accounts
 3. **Back up `proof.json`** regularly
 4. **Use different temp mails** so you don't get detected as a bot
@@ -277,14 +303,13 @@ Tool ini dibuat untuk keperluan edukasi dan testing automation. Gunakan dengan b
 - ✅ Random password generator yang aman
 - ✅ Auto-save credentials ke JSON
 - ✅ Stealth mode (bypass anti-bot detection)
-- ✅ Support temp mail
-- ✅ **Auto email via [mail.tm](https://mail.tm)** — ga perlu nyiapin list email manual
-- ✅ **Auto OTP** — kode verifikasi diambil otomatis dari inbox mail.tm
+- ✅ **Detail step logging** — nge-log tiap klik dan tunggu pas bikin akun
 - ✅ **Auto verifikasi** — akun diverifikasi via API CapCut dan `uid` disimpan
+- ✅ **Proof error/invalid** — percobaan yang gagal juga tersimpan di `proof.json`
 
 ### ⚠️ Catatan tentang Web Selector (PENTING)
 
-Selector web yang dipakai buat narget elemen di halaman CapCut bisa **beda di tiap negara dan bisa berubah sewaktu-waktu** (CapCut sering update UI-nya). Kalau tool gagal ngisi form, daftar akun, atau baca OTP, kemungkinan besar selector di `main.py` (atau `mailtm.py`) perlu di-adjust. Cek release notes / issues buat update selector.
+Selector web yang dipakai buat narget elemen di halaman CapCut bisa **beda di tiap negara dan bisa berubah sewaktu-waktu** (CapCut sering update UI-nya). Kalau tool gagal ngisi form, daftar akun, atau baca OTP, kemungkinan besar selector di `main.py` perlu di-adjust. Cek release notes / issues buat update selector.
 
 ### 📋 Requirements
 
@@ -320,9 +345,7 @@ pip install -r requirements.txt
 playwright install chromium
 ```
 
-### 📧 Nyiapin Email List (Mode Manual)
-
-> **Skip bagian ini kalo pake `--auto`** — email dibuat otomatis via mail.tm.
+### 📧 Nyiapin Email List
 
 Buat file `gmail-list.txt` di root folder, isi dengan list email (satu email per baris):
 
@@ -339,44 +362,67 @@ email3@example.com
 3. **[NoSpam Today](https://nospam.today/)**
 4. **[Email Generator](https://generator.email/)**
 
-> **Tips:** Jangan pake gmail asli lu kalo ga mau kena ban. Pake temp mail aja biar aman.
+> **💡 Catatan — pake email yang kuat biar success rate lebih gede:**
+> Buat **success rate terbaik dan lebih aman**, pake **email kuat / asli** (misal **Gmail** / **Outlook**). Domain temp mail sering di-blacklist CapCut, jadi email asli dapet OTP jauh lebih lancar, tingkat aktivasi/verifikasi akun jauh lebih tinggi, dan lebih aman buat recovery kalo password hilang.
+>
+> Kalo masih mau pake temp mail, pake layanan di atas — tapi expect **success rate lebih rendah**.
 
-### ⚙️ Cara Kerja Mode Auto (mail.tm)
+#### 🪄 Generator Gmail Trick (recommended)
 
-Mode `--auto` memakai [mail.tm API](https://docs.mail.tm/getting-started/authentication) (gratis, tanpa API key):
+Bokep ngisi `gmail-list.txt` dengan banyak email asli? Pake **generator Gmail trick** bawaan (`gmail_gen.py`). Satu email Gmail/Outlook asli jadi banyak alamat yang keliatan unik, lalu **otomatis ditulis ke `gmail-list.txt`**:
 
-1. `GET /domains` — ambil domain aktif yang tersedia
-2. `POST /accounts` — buat akun email acak (misal `ccx7a2k9@emalupe.com`)
-3. `POST /token` — dapatkan Bearer token untuk autentikasi
-4. Script daftar ke CapCut pakai email tersebut
-5. `GET /messages` — polling inbox tiap 5 detik (maks 120 detik) sampai email OTP masuk
-6. Kode OTP 6 digit diekstrak otomatis dari isi email dan diisi ke form
+```bash
+python gmail_gen.py -b my.name@gmail.com -n 20
+```
 
-Kalo OTP ga masuk dalam 120 detik, script fallback ke input manual via CLI.
+- `-b, --base` — email asli lu (semua varian masuk ke inbox ini)
+- `-n, --count` — jumlah email unik yang mau dibuat
+- `-m, --mode` — `dot` (Gmail), `plus` (Gmail/Outlook), atau `both` (default)
+- `--append` — tambah ke list existing, bukan nimpain
+- `--lang en|id` — bahasa output
+
+**Cara kerja trick-nya:**
+- **Dot trick** (Gmail): Gmail ng-ignore titik, jadi `my.name@gmail.com` bisa jadi `my.na.me@gmail.com`, `m.y.n.a.me@gmail.com`, dst — semua masuk ke inbox yang sama.
+- **Plus trick** (Gmail/Outlook): `base+1@gmail.com`, `base+2@gmail.com` … semua masuk ke inbox yang sama.
+
+Jadi dengan **satu Gmail asli** lu bisa isi `gmail-list.txt` dan daftarin banyak akun CapCut — semua OTP masuk ke inbox yang sama. Jalanin **tanpa argumen** bakal di-prompt interaktif.
 
 ### 🎮 Usage
 
-#### Mode Auto (mail.tm) — Recommended
+Bahasa output **default-nya English**. Pake flag `--lang id` (atau menu interaktif) buat ganti ke Bahasa Indonesia.
 
-Ga perlu nyiapin `gmail-list.txt`. Email dibuat otomatis via [mail.tm API](https://docs.mail.tm/getting-started/authentication) dan OTP diambil otomatis dari inbox:
+#### Menu Konfigurasi Interaktif
 
-```bash
-python main.py --auto
+Jalanin `python main.py` **tanpa argumen** buat buka menu interaktif dan atur run-nya:
+
+```text
+==================================================
+🤖 CAPCUT BOT - CONFIG MENU
+==================================================
+[1] Language / Bahasa: English
+[2] Number of accounts / Jumlah akun: 1
+[3] Headless mode: OFF
+[4] Start / Mulai
+[0] Exit / Keluar
+==================================================
+Choose / Pilih: 
 ```
 
-#### Auto Mode + Multiple Akun + Headless (Full Otomatis)
+- `1` — ganti bahasa output (English / Bahasa Indonesia)
+- `2` — atur jumlah akun yang mau dibuat
+- `3` — toggle headless mode
+- `4` — mulai jalanin
+- `0` — keluar
+
+> 💡 Kalo lu kasih **argumen apapun** (contoh `python main.py -n 5`), menunya di-skip dan langsung jalan — jadi tool tetep bisa dipake di script. Input menu yang invalid bakal di-prompt ulang, bukan error.
+
+#### Bikin 1 Akun
 
 ```bash
-python main.py -n 5 --auto --headless
+python main.py -n 1
 ```
 
-#### Bikin 1 Akun (Default, Manual)
-
-```bash
-python main.py
-```
-
-#### Bikin Multiple Akun (Manual)
+#### Bikin Multiple Akun
 
 ```bash
 python main.py -n 5
@@ -388,6 +434,12 @@ python main.py -n 5
 python main.py -n 3 --headless
 ```
 
+#### Pilih Bahasa Output
+
+```bash
+python main.py -n 5 --lang id
+```
+
 #### Advanced Options
 
 ```bash
@@ -396,22 +448,20 @@ python main.py --help
 
 Output:
 ```
-usage: main.py [-h] [-n NUMBER] [--headless] [--auto]
+usage: main.py [-h] [-n NUMBER] [--headless] [--lang {en,id}]
 
 CapCut Auto Register CLI Tool
 
 options:
   -h, --help            show this help message and exit
-  -n NUMBER, --number NUMBER
-                        Jumlah akun yang ingin dibuat (Default: 1)
+  -n, --number NUMBER   Jumlah akun yang ingin dibuat (Default: 1)
   --headless            Jalankan browser di background (tidak terlihat)
-  --auto                Auto email via mail.tm (tidak perlu gmail-list.txt) +
-                        OTP otomatis
+  --lang {en,id}        Output language: en or id
 ```
 
 ### 📸 Screenshot CLI
 
-Hasil batch 3 akun (auto email via mail.tm + auto OTP + verifikasi):
+Hasil batch 3 akun:
 ![CapCut bot sukses](image.png)
 
 ### 📁 File Structure
@@ -420,11 +470,12 @@ Hasil batch 3 akun (auto email via mail.tm + auto OTP + verifikasi):
 Capcut-Acc-Maker/
 │
 ├── main.py              # Script utama
-├── mailtm.py            # Mail.tm API client (auto email + auto OTP)
-├── gmail-list.txt       # List email (dibuat manual, tidak dipakai di mode --auto)
-├── proof.json          # Output credentials (auto-generated)
-├── .venv/              # Virtual environment
-└── README.md           # File ini
+├── gmail_gen.py         # Generator Gmail trick (auto-fill gmail-list.txt)
+├── i18n.py              # String table bilingual (EN / ID)
+├── gmail-list.txt       # List email (dibuat manual)
+├── proof.json           # Output credentials (auto-generated)
+├── .venv/               # Virtual environment
+└── README.md            # File ini
 ```
 
 ### 📊 Output Format
@@ -434,17 +485,22 @@ Data akun tersimpan di `proof.json`:
 ```json
 [
     {
-        "email": "ccx7a2k9@emalupe.com",
-        "password": "RMePPubILrp!",
-        "birthday": "25/05/2003",
-        "uid": "7677513420518622228",
+        "email": "your.email@example.com",
+        "password": "YourStrongPassword123!",
+        "birthday": "01/01/2000",
+        "uid": "YOUR_UID_HERE",
         "verified": true,
-        "created_at": "2026-08-24T15:33:52.033104"
+        "status": "success",
+        "created_at": "2026-08-25T00:00:00.000000"
     }
 ]
 ```
 
 > Field `uid` dan `verified` baru ada setelah diaktifkan fitur verifikasi akun via API `commerce/v1/subscription/user_info`.
+
+> Percobaan yang gagal/invalid juga ikut disimpan di `proof.json` dengan `"status": "error"`, `"verified": false` dan pesan `"error"`, jadi bisa dilihat email mana yang gagal.
+
+> **🔒 Catatan privasi:** `proof.json` dan `gmail-list.txt` isinya kredensial asli dan **di-git-ignore** — ga pernah di-commit. Ganti nilai di atas sama data lu sendiri; itu cuma placeholder.
 
 ### 🐛 Troubleshooting
 
@@ -469,20 +525,16 @@ playwright install chromium
 
 #### OTP ga masuk
 
-- Mode `--auto`: script otomatis polling inbox mail.tm selama 120 detik, lalu fallback ke input manual
 - Cek folder spam di temp mail
 - Tunggu 30-60 detik
 - Kalo masih ga masuk, coba email lain
 
-#### Error: Gagal membuat email mail.tm
-
-- Cek koneksi internet
-- mail.tm punya rate limit — script otomatis retry 3x, tapi kalo masih gagal tunggu 1-2 menit
-- Domain mail.tm kadang diblacklist CapCut, coba lagi nanti (domain aktif bisa berubah)
-
 ### 💡 Tips & Tricks
 
-1. **Pake VPN** kalo bikin banyak akun sekaligus biar ga kena rate limit
+> **⚠️ Catatan — pake proxy/VPN biar aman:**
+> Bikin banyak akun dari satu IP gampang banget kedetect sama CapCut dan bisa kena ban. Pake **proxy atau VPN** (ideal tiap akun beda IP, atau rotate IP) biar tiap registrasi keliatan datang dari user beda. Ini jauh nurunin risiko IP utama dan akun lu di-flag/blacklist. Gabungin sama trick email generator di atas buat hasil terbaik.
+
+1. **Pake proxy/VPN** kalo bikin banyak akun sekaligus biar ga kena rate limit dan IP ban
 2. **Jangan spam** - kasih jeda minimal 1-2 menit per akun
 3. **Backup `proof.json`** secara berkala
 4. **Pake temp mail yang beda-beda** biar ga kedetect sebagai bot

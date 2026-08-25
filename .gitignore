@@ -51,6 +51,10 @@ playwright/.cache/
 
 # Generated output containing credentials (do not commit)
 proof.json
+gmail-list.txt
+
+# Local tooling (not for the repo)
+.kilo/
 
 # Debug screenshots (not part of the release)
 debug_*.png
